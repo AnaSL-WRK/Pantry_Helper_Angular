@@ -1,0 +1,53 @@
+<div class="container" style="padding: 2rem 1.5rem">
+  <div class="page-header">
+    <h1>🏠 Households</h1>
+    <button class="btn btn-primary" (click)="showForm = true">+ New Household</button>
+  </div>
+
+  <!-- modal -->
+  <app-household-form
+    *ngIf="showForm"
+    (saved)="onFormSaved()"
+    (cancelled)="showForm = false">
+  </app-household-form>
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <div *ngIf="!loading && households.length === 0" class="empty-state card">
+    <h3>No households yet</h3>
+    <p>Create your first household to start tracking your pantry</p>
+    <button class="btn btn-primary" style="margin-top:1rem" (click)="showForm = true">
+      Create Household
+    </button>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="household-card card" *ngFor="let h of households"
+      [class.selected]="selectedHousehold?.id === h.id">
+
+      <div class="hh-header">
+        <div>
+          <h3>{{ h.name }}</h3>
+          <p class="text-muted text-sm">{{ h.description }}</p>
+        </div>
+        <span [class]="getRoleBadge(h.current_user_role)">
+          {{ h.current_user_role?.replace('_', ' ') }}
+        </span>
+      </div>
+
+      <div class="hh-meta text-sm text-muted">
+        {{ h.member_count }} member{{ h.member_count !== 1 ? 's' : '' }} &nbsp;·&nbsp;
+        Created {{ h.created_at | slice:0:10 }}
+      </div>
+
+      <div class="hh-actions">
+        <button class="btn btn-sm btn-outline" (click)="select(h)">
+          {{ selectedHousehold?.id === h.id ? '✓ Active' : 'Set Active' }}
+        </button>
+        <a [routerLink]="['/households', h.id]" class="btn btn-sm btn-secondary">Manage</a>
+        <button class="btn btn-sm btn-danger" *ngIf="h.current_user_role === 'admin'"
+          (click)="delete(h)">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>

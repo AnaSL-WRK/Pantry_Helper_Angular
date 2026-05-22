@@ -1,0 +1,159 @@
+<div class="container pantry-page">
+
+  <!-- no household -->
+  <div *ngIf="!household && !loading" class="empty-state card">
+    <h3>No household selected</h3>
+    <p>Select a household from the navigation bar</p>
+    <a routerLink="/households" class="btn btn-primary" style="margin-top:1rem">Go to Households</a>
+  </div>
+
+  <ng-container *ngIf="household">
+    <div class="page-header">
+      <h1>Pantry - {{ household.name }}</h1>
+      <button class="btn btn-primary" (click)="openAdd()" *ngIf="canWrite()">+ Add Item</button>
+    </div>
+
+    <!-- filters -->
+    <div class="filters card">
+      <div class="filters-row">
+        <input class="form-control" [(ngModel)]="searchTerm"
+          (ngModelChange)="onSearch()" placeholder="🔍 Search items...">
+
+        <select class="form-control" [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
+          <option value="">All statuses</option>
+          <option value="available">Available</option>
+          <option value="low">Low Stock</option>
+          <option value="consumed">Consumed</option>
+          <option value="wasted">Wasted</option>
+        </select>
+
+        <select class="form-control" [(ngModel)]="categoryFilter" (ngModelChange)="onFilterChange()">
+          <option value="">All categories</option>
+          <option *ngFor="let cat of categories" [value]="cat.id">
+            {{ cat.name }}
+          </option>
+        </select>
+
+        <select class="form-control" [(ngModel)]="sortBy" (ngModelChange)="onFilterChange()">
+          <option value="name">Sort: Name</option>
+          <option value="expiry_date">Sort: Expiry</option>
+          <option value="-added_at">Sort: Newest</option>
+          <option value="quantity">Sort: Quantity</option>
+        </select>
+
+        <label class="expiry-toggle">
+          <input type="checkbox" [(ngModel)]="showExpiringSoon" (ngModelChange)="onFilterChange()">
+            Expiring soon
+        </label>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="spinner"></div>
+
+    <!-- empty -->
+    <div *ngIf="!loading && items.length === 0" class="empty-state card">
+      <h3>No items found</h3>
+      <p>Try adjusting your filters or add new items</p>
+      <button class="btn btn-primary" style="margin-top:1rem"
+        (click)="openAdd()" *ngIf="canWrite()">Add First Item</button>
+    </div>
+
+
+    <div class="card table-wrap" *ngIf="!loading && items.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Category</th>
+            <th>Quantity</th>
+            <th>Expiry</th>
+            <th>Status</th>
+            <th>Added by</th>
+            <th *ngIf="canWrite()">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items" [class.row-expired]="item.is_expired">
+            <td>
+              <div class="item-name">{{ item.name }}</div>
+              <div class="text-sm text-muted" *ngIf="item.notes">{{ item.notes }}</div>
+            </td>
+            <td>
+              <span *ngIf="item.category">{{ item.category.name }}</span>
+              <span *ngIf="!item.category" class="text-muted">-</span>
+            </td>
+            <td>{{ item.quantity }} {{ item.unit }}</td>
+            <td>
+              <span [class]="getStatusClass(item)" *ngIf="item.expiry_date">
+                {{ getExpiryLabel(item) }}
+              </span>
+              <span *ngIf="!item.expiry_date" class="text-muted">-</span>
+            </td>
+            <td>
+              <span [class]="'badge status-' + item.status">{{ item.status }}</span>
+            </td>
+            <td class="text-sm text-muted">{{ item.added_by?.username || '-' }}</td>
+            <td *ngIf="canWrite()">
+              <div class="action-btns">
+                <button class="btn btn-sm btn-outline" title="Edit" (click)="openEdit(item)">Edit</button>
+                <button class="btn btn-sm btn-secondary" title="Consume" (click)="openConsume(item)"
+                  [disabled]="item.status !== 'available'">Consume</button>
+                <button class="btn btn-sm btn-warning" title="Mark as wasted" (click)="openWaste(item)"
+                  [disabled]="item.status !== 'available'">Mark as Wasted</button>
+                <button class="btn btn-sm btn-danger" title="Delete" (click)="deleteItem(item)">Delete</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- Add / Edit  modal -->
+  <app-pantry-item-form
+    *ngIf="showForm && household"
+    [household]="household"
+    [item]="editItem"
+    [categories]="categories"
+    (saved)="onFormSaved()"
+    (cancelled)="showForm = false">
+  </app-pantry-item-form>
+
+  <!-- consume modal -->
+  <div class="modal-overlay" *ngIf="showConsumeModal" (click)="showConsumeModal = false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Consume "{{ actionItem?.name }}"</h2>
+        <button class="modal-close" (click)="showConsumeModal = false">x</button>
+      </div>
+      <div class="form-group">
+        <label>Quantity to consume (max {{ actionItem?.quantity }} {{ actionItem?.unit }})</label>
+        <input class="form-control" type="number" [(ngModel)]="actionQty"
+          [max]="actionItem ? actionItem.quantity : null"  min="0.01" step="any">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showConsumeModal = false">Cancel</button>
+        <button class="btn btn-primary" (click)="confirmConsume()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- waste modal -->
+  <div class="modal-overlay" *ngIf="showWasteModal" (click)="showWasteModal = false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Waste "{{ actionItem?.name }}"</h2>
+        <button class="modal-close" (click)="showWasteModal = false">x</button>
+      </div>
+      <div class="form-group">
+        <label>Quantity to mark as wasted (max {{ actionItem?.quantity }} {{ actionItem?.unit }})</label>
+        <input class="form-control" type="number" [(ngModel)]="actionQty"
+          [max]="actionItem ? actionItem.quantity : null"  min="0.01" step="any">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showWasteModal = false">Cancel</button>
+        <button class="btn btn-warning" (click)="confirmWaste()">Mark as Wasted</button>
+      </div>
+    </div>
+  </div>
+</div>

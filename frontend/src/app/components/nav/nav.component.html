@@ -1,0 +1,34 @@
+<nav class="navbar">
+  <div class="nav-container">
+    <a routerLink="/dashboard" class="nav-brand">
+      Pantry Helper
+    </a>
+
+    <!-- household selector -->
+    <div class="household-selector" *ngIf="households.length > 0">
+      <select (change)="selectHousehold(households[$any($event.target).value])">
+        <option *ngFor="let h of households; let i = index" [value]="i"
+          [selected]="selectedHousehold?.id === h.id">
+          {{ h.name }}
+        </option>
+      </select>
+    </div>
+
+    <!-- nav links -->
+    <div class="nav-links">
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/pantry" routerLinkActive="active">Pantry</a>
+      <a routerLink="/recipes" routerLinkActive="active">Recipes</a>
+      <a routerLink="/households" routerLinkActive="active">Households</a>
+    </div>
+
+    <!--user -->
+    <div class="nav-user">
+      <a routerLink="/profile" class="user-btn">
+        {{ authService.currentUser?.username }}
+      </a>
+      <button class="btn btn-sm btn-secondary" (click)="logout()">Logout</button>
+    </div>
+
+  </div>
+</nav>

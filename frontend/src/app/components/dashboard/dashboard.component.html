@@ -1,0 +1,110 @@
+<div class="container dashboard">
+
+  <!-- no household -->
+  <div *ngIf="!household && !loading" class="empty-state card">
+    <h3>No household selected</h3>
+    <p>Create or join a household to get started</p>
+    <a routerLink="/households" class="btn btn-primary" style="margin-top:1rem">
+      Go to Households
+    </a>
+  </div>
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <ng-container *ngIf="household && !loading">
+    <!-- header -->
+    <div class="page-header">
+      <div>
+        <h1>{{ household.name }}</h1>
+        <p class="text-muted">Welcome back, {{ authService.currentUser?.first_name || authService.currentUser?.username }}!</p>
+      </div>
+      <a routerLink="/pantry" class="btn btn-primary">+ Add Item</a>
+    </div>
+
+    <!-- stats -->
+    <div class="stats-grid" *ngIf="stats">
+      <div class="stat-card">
+        <div class="stat-value">{{ stats.total_items }}</div>
+        <div class="stat-label">Items Available</div>
+      </div>
+      <div class="stat-card warn" *ngIf="stats.expiring_soon > 0">
+        <div class="stat-value">{{ stats.expiring_soon }}</div>
+        <div class="stat-label">Expiring Soon</div>
+      </div>
+      <div class="stat-card" [class.danger]="stats.expired > 0">
+        <div class="stat-value">{{ stats.expired }}</div>
+        <div class="stat-label">Expired</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ stats.wasted }}</div>
+        <div class="stat-label">Wasted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ stats.consumed }}</div>
+        <div class="stat-label">Consumed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ stats.categories }}</div>
+        <div class="stat-label">Categories</div>
+      </div>
+    </div>
+
+    <div class="bottom-grid">
+      <!--expiring soon -->
+      <div class="card">
+        <div class="section-header">
+          <h2>Expiring Soon</h2>
+          <a routerLink="/pantry" [queryParams]="{expiring_soon: true}" class="btn btn-sm btn-outline">View all</a>
+        </div>
+        <div *ngIf="expiringItems.length === 0" class="empty-state" style="padding: 2rem">
+          <p>No items expiring in the next 7 days</p>
+        </div>
+        <table *ngIf="expiringItems.length > 0">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Expires</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of expiringItems">
+              <td>
+                <span *ngIf="item.category">{{ item.category.name }} </span>
+                {{ item.name }}
+              </td>
+              <td>{{ item.quantity }} {{ item.unit }}</td>
+              <td>
+                <span [class]="getDaysBadge(item.days_until_expiry)">
+                  {{ getDaysLabel(item.days_until_expiry) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- suggested recipes -->
+      <div class="card">
+        <div class="section-header">
+          <h2>Recipe Suggestions</h2>
+          <a routerLink="/recipes" class="btn btn-sm btn-outline">All recipes</a>
+        </div>
+        <div *ngIf="suggestedRecipes.length === 0" class="empty-state" style="padding: 2rem">
+          <p>Add more items to get recipe suggestions</p>
+        </div>
+        <div class="recipe-list">
+          <div class="recipe-card" *ngFor="let recipe of suggestedRecipes"
+            [routerLink]="['/recipes', recipe.id]">
+            <div class="recipe-name">{{ recipe.name }}</div>
+            <div class="recipe-meta text-muted text-sm">
+              {{ recipe.prep_time_minutes }} min &nbsp;·&nbsp;
+              {{ recipe.servings }} servings
+            </div>
+            <span class="badge badge-success" *ngIf="recipe.can_make">Can make!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

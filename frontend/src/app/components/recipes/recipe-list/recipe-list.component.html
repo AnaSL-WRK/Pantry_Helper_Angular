@@ -1,0 +1,99 @@
+<div class="container recipe-page">
+  <div class="page-header">
+    <h1>Recipes</h1>
+    <div class="flex gap-1">
+      <button class="btn btn-outline" (click)="loadSuggested()" *ngIf="household">
+        Suggestions
+      </button>
+      <button class="btn btn-primary" (click)="openAdd()">+ New Recipe</button>
+    </div>
+  </div>
+
+  <!-- search -->
+  <div class="search-bar">
+    <input class="form-control" [(ngModel)]="searchTerm"
+      (ngModelChange)="onSearch()" placeholder="Search recipes by name or ingredient...">
+  </div>
+
+  <!-- suggested recipes -->
+  <div class="card suggestions-panel" *ngIf="showSuggested">
+    <div class="section-header">
+      <h2>Suggested Recipes</h2>
+      <button class="btn btn-sm btn-secondary" (click)="showSuggested = false">Close</button>
+    </div>
+    <p class="text-muted text-sm" style="margin-bottom: 1rem">
+      Based on whats currently in your pantry
+    </p>
+    <div *ngIf="loadingSuggested" class="spinner" style="margin: 1rem auto"></div>
+    <div *ngIf="!loadingSuggested && suggestedRecipes.length === 0" class="text-muted">
+      No matching recipes found. Add more pantry items!
+    </div>
+    <div class="recipe-grid" *ngIf="!loadingSuggested">
+      <div class="recipe-card" *ngFor="let recipe of suggestedRecipes"
+        [routerLink]="['/recipes', recipe.id]">
+        <div class="recipe-card-header">
+          <span class="recipe-name">{{ recipe.name }}</span>
+          <span class="badge badge-success" *ngIf="recipe.can_make">Can make!</span>
+        </div>
+        <p class="text-sm text-muted">{{ recipe.description }}</p>
+        <div class="recipe-meta">
+          <span>{{ recipe.prep_time_minutes }} min</span>
+          <span>{{ recipe.servings }} servings</span>
+          <span>{{ recipe.ingredients.length }} ingredients</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div *ngIf="loading" class="spinner"></div>
+
+  <div *ngIf="!loading && recipes.length === 0" class="empty-state card">
+    <h3>No recipes found</h3>
+    <p>Create your first recipe or try a different search</p>
+    <button class="btn btn-primary" style="margin-top:1rem" (click)="openAdd()">
+      Create Recipe
+    </button>
+  </div>
+
+  <!-- recipe -->
+  <div class="recipe-grid" *ngIf="!loading && recipes.length > 0">
+    <div class="recipe-card" *ngFor="let recipe of recipes"
+      [routerLink]="['/recipes', recipe.id]">
+      <div class="recipe-card-header">
+        <span class="recipe-name">{{ recipe.name }}</span>
+        <div class="flex gap-1" *ngIf="recipe.can_make !== null">
+          <span class="badge badge-success" *ngIf="recipe.can_make">Can make!</span>
+          <span class="badge badge-muted" *ngIf="!recipe.can_make">Missing ingredients</span>
+        </div>
+      </div>
+      <p class="text-sm text-muted recipe-desc" *ngIf="recipe.description">
+        {{ recipe.description }}
+      </p>
+
+      <div class="recipe-ingredients text-sm text-muted">
+        {{ getIngredientPreview(recipe) }}
+        <span *ngIf="hasMoreIngredients(recipe)">+{{ extraIngredientCount(recipe) }} more</span>
+      </div>
+
+      <div class="recipe-footer">
+        <div class="recipe-meta">
+          <span>{{ recipe.prep_time_minutes }} min</span>
+          <span>{{ recipe.servings }}</span>
+        </div>
+        <div class="recipe-actions" (click)="$event.stopPropagation()">
+          <button class="btn btn-sm btn-outline" (click)="openEdit(recipe, $event)">Edit</button>
+          <button class="btn btn-sm btn-danger" (click)="deleteRecipe(recipe, $event)">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!--modal -->
+  <app-recipe-form
+    *ngIf="showForm"
+    [recipe]="editRecipe"
+    (saved)="onFormSaved()"
+    (cancelled)="showForm = false">
+  </app-recipe-form>
+</div>

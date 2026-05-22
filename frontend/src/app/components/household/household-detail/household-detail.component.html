@@ -1,0 +1,103 @@
+<div class="container" style="padding: 2rem 1.5rem">
+  <div *ngIf="loading" class="spinner"></div>
+
+  <ng-container *ngIf="household && !loading">
+    <div class="page-header">
+      <div>
+        <a routerLink="/households" class="back-link text-muted text-sm">← Back</a>
+        <h1>{{ household.name }}</h1>
+        <p class="text-muted">{{ household.description }}</p>
+      </div>
+      <div class="flex gap-1" *ngIf="isAdmin()">
+        <button class="btn btn-outline" (click)="showEditForm = true">Edit</button>
+      </div>
+    </div>
+
+    <!-- edit form -->
+    <app-household-form
+      *ngIf="showEditForm"
+      [household]="household"
+      (saved)="onFormSaved($event)"
+      (cancelled)="showEditForm = false">
+    </app-household-form>
+
+    <div class="detail-grid">
+      <!-- members -->
+      <div class="card">
+        <div class="section-header">
+          <h2>👥 Members ({{ household.members.length }})</h2>
+          <button class="btn btn-sm btn-primary" *ngIf="isAdmin()" (click)="showAddMember = !showAddMember">
+            + Add Member
+          </button>
+        </div>
+
+        <!-- add member-->
+        <div class="add-member-form" *ngIf="showAddMember">
+          <div class="alert alert-danger" *ngIf="addMemberError">{{ addMemberError }}</div>
+          <form [formGroup]="addMemberForm" (ngSubmit)="addMember()">
+            <div class="form-row">
+              <input class="form-control" formControlName="username" placeholder="Username">
+              <select class="form-control" formControlName="role">
+                <option value="viewer">Viewer</option>
+                <option value="member">Member</option>
+                <option value="inventory_manager">Inventory Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="addMemberLoading">
+                {{ addMemberLoading ? '...' : 'Add' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="member-list">
+          <div class="member-row" *ngFor="let member of household.members">
+            <div class="member-info">
+              <strong>{{ member.user.username }}</strong>
+              <span class="text-muted text-sm">
+                {{ member.user.first_name }} {{ member.user.last_name }}
+              </span>
+            </div>
+            <div class="member-actions">
+              <select *ngIf="isAdmin()" class="role-select"
+                [value]="member.role"
+                (change)="changeRole(member, $any($event.target).value)">
+                <option value="viewer">Viewer</option>
+                <option value="member">Member</option>
+                <option value="inventory_manager">Inv. Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+              <span *ngIf="!isAdmin()" [class]="getRoleBadge(member.role)">
+                {{ member.role.replace('_', ' ') }}
+              </span>
+              <button class="btn btn-sm btn-danger" *ngIf="isAdmin()"
+                (click)="removeMember(member)">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- activity -->
+      <div class="card">
+        <h2 style="margin-bottom: 1rem">Recent Activity</h2>
+        <div *ngIf="logs.length === 0" class="text-muted text-sm">No activity yet.</div>
+        <div class="log-list">
+          <div class="log-row" *ngFor="let log of logs">
+            <div class="log-info">
+              <span class="log-item">{{ log.item_name }}</span>
+              <span class="text-muted text-sm">
+                {{ log.action }} by {{ log.user?.username }}
+                <span *ngIf="log.quantity_change">
+                  ({{ log.quantity_change > 0 ? '+' : '' }}{{ log.quantity_change }})
+                </span>
+              </span>
+            </div>
+            <span class="log-time text-muted text-sm">
+              {{ log.timestamp | slice:0:10 }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

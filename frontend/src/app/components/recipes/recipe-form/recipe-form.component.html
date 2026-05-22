@@ -1,0 +1,78 @@
+<div class="modal-overlay" (click)="cancelled.emit()">
+  <div class="modal modal-wide" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ recipe ? 'Edit Recipe' : 'New Recipe' }}</h2>
+      <button class="modal-close" (click)="cancelled.emit()">x</button>
+    </div>
+
+    <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="form-group">
+        <label>Recipe Name *</label>
+        <input class="form-control" formControlName="name" placeholder="e.g. Spaghetti Bolognese"
+          [class.is-invalid]="form.get('name')?.invalid && form.get('name')?.touched">
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <input class="form-control" formControlName="description" placeholder="Short description">
+      </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Servings *</label>
+          <input class="form-control" type="number" formControlName="servings" min="1">
+        </div>
+        <div class="form-group">
+          <label>Prep time (min) *</label>
+          <input class="form-control" type="number" formControlName="prep_time_minutes" min="0">
+        </div>
+        <div class="form-group" style="display:flex; align-items:flex-end; padding-bottom:0.1rem">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="is_public">
+            Public recipe
+          </label>
+        </div>
+      </div>
+
+
+      <div class="form-group">
+        <div class="ingredients-header">
+          <label>Ingredients *</label>
+          <button type="button" class="btn btn-sm btn-outline" (click)="addIngredient()">+ Add</button>
+        </div>
+        <div class="ingredient-rows" formArrayName="ingredients">
+          <div class="ingredient-row" *ngFor="let ctrl of ingredients.controls; let i = index"
+            [formGroupName]="i">
+            <input class="form-control" formControlName="name" placeholder="Ingredient name"
+              [class.is-invalid]="ctrl.get('name')?.invalid && ctrl.get('name')?.touched">
+            <input class="form-control ing-qty" type="number" formControlName="quantity"
+              placeholder="Qty" min="0.01" step="any">
+            <select class="form-control ing-unit" formControlName="unit">
+              <option *ngFor="let u of units" [value]="u">{{ u }}</option>
+            </select>
+            <button type="button" class="btn btn-sm btn-danger" (click)="removeIngredient(i)"
+              [disabled]="ingredients.length === 1">✕</button>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="form-group">
+        <label>Instructions *</label>
+        <textarea class="form-control" formControlName="instructions" rows="6"
+          placeholder="1. Step one&#10;2. Step two&#10;3. Step three"
+          [class.is-invalid]="form.get('instructions')?.invalid && form.get('instructions')?.touched">
+        </textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelled.emit()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="form.invalid || loading">
+          {{ loading ? 'Saving...' : (recipe ? 'Update Recipe' : 'Create Recipe') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

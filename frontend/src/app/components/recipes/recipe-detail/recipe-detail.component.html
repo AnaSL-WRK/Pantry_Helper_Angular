@@ -1,0 +1,70 @@
+<div class="container recipe-detail">
+  <div *ngIf="loading" class="spinner"></div>
+
+  <ng-container *ngIf="recipe && !loading">
+    <a routerLink="/recipes" class="back-link text-muted text-sm">Back to Recipes</a>
+
+    <div class="recipe-header card">
+      <div class="recipe-title-row">
+        <div>
+          <h1>{{ recipe.name }}</h1>
+          <p class="text-muted" *ngIf="recipe.description">{{ recipe.description }}</p>
+        </div>
+        <div class="recipe-header-actions">
+          <span class="badge badge-success" *ngIf="recipe.can_make">
+            Can make with your pantry!
+          </span>
+          <button class="btn btn-outline" (click)="showEditForm = true">Edit</button>
+          <button class="btn btn-danger" (click)="delete()">Delete</button>
+        </div>
+      </div>
+
+      <div class="recipe-stats">
+        <div class="recipe-stat">
+          <span>{{ recipe.prep_time_minutes }} min</span>
+        </div>
+        <div class="recipe-stat">
+          <span>{{ recipe.servings }} servings</span>
+        </div>
+        <div class="recipe-stat">
+          <span>{{ recipe.ingredients.length }} ingredients</span>
+        </div>
+        <div class="recipe-stat">
+          <span>By {{ recipe.created_by?.username }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="recipe-body">
+
+
+      <div class="card">
+        <h2>Ingredients</h2>
+        <ul class="ingredient-list">
+          <li *ngFor="let ing of recipe.ingredients">
+            <span class="ing-amount">{{ ing.quantity }} {{ ing.unit }}</span>
+            <span class="ing-name">{{ ing.name }}</span>
+          </li>
+        </ul>
+      </div>
+
+
+      <div class="card">
+        <h2>Instructions</h2>
+        <ol class="instruction-list">
+          <li *ngFor="let step of formatInstructions(recipe.instructions)">
+            {{ step }}
+          </li>
+        </ol>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- edit form -->
+  <app-recipe-form
+    *ngIf="showEditForm && recipe"
+    [recipe]="recipe"
+    (saved)="onFormSaved()"
+    (cancelled)="showEditForm = false">
+  </app-recipe-form>
+</div>

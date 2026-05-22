@@ -1,0 +1,38 @@
+.pantry-page { padding: 2rem 1.5rem; }
+
+.filters { margin-bottom: 1.5rem; padding: 1rem 1.25rem; }
+.filters-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.filters-row .form-control { min-width: 140px; flex: 1; }
+
+.expiry-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.expiry-toggle input { cursor: pointer; }
+
+.item-name { font-weight: 500; }
+
+.action-btns {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.row-expired td { opacity: 0.6; }
+.row-expired .item-name { text-decoration: line-through; }
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
