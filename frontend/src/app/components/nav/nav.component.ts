@@ -43,10 +43,10 @@ export class NavComponent implements OnInit {
 
   logout(): void {
     this.authService.logout().subscribe({
-      next: () => this.router.navigate(['/login']),
+      next: () => this.router.navigate(['/']),
       error: () => {
         this.authService.clearSession();
-        this.router.navigate(['/login']);
+        this.router.navigate(['/']);
       }
     });
   }

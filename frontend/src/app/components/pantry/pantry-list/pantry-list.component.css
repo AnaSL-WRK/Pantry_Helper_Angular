@@ -24,8 +24,13 @@
 .action-btns {
   display: flex;
   gap: 0.3rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
 }
+
+/* Tighter table rows in the pantry */
+td { padding: 0.5rem 0.6rem; }
+th { padding: 0.5rem 0.6rem; }
 
 .row-expired td { opacity: 0.6; }
 .row-expired .item-name { text-decoration: line-through; }
