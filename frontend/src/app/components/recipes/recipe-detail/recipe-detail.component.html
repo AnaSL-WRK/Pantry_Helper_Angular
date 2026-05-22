@@ -14,8 +14,10 @@
           <span class="badge badge-success" *ngIf="recipe.can_make">
             Can make with your pantry!
           </span>
-          <button class="btn btn-outline" (click)="showEditForm = true">Edit</button>
-          <button class="btn btn-danger" (click)="delete()">Delete</button>
+          <ng-container *ngIf="isOwner()">
+            <button class="btn btn-outline" (click)="showEditForm = true">Edit</button>
+            <button class="btn btn-danger" (click)="delete()">Delete</button>
+          </ng-container>
         </div>
       </div>
 
@@ -42,6 +44,9 @@
         <h2>Ingredients</h2>
         <ul class="ingredient-list">
           <li *ngFor="let ing of recipe.ingredients">
+            <span class="ing-status" *ngIf="householdId">
+              {{ isIngredientAvailable(ing.name) ? '✅' : '❌' }}
+            </span>
             <span class="ing-amount">{{ ing.quantity }} {{ ing.unit }}</span>
             <span class="ing-name">{{ ing.name }}</span>
           </li>

@@ -43,7 +43,7 @@ export interface PantryItem {
   quantity: number;
   unit: string;
   expiry_date: string | null;
-  status: 'available' | 'low' | 'consumed' | 'wasted';
+  status: 'available' | 'consumed' | 'wasted';
   notes: string;
   added_by: User | null;
   added_at: string;
@@ -68,9 +68,12 @@ export interface Recipe {
   prep_time_minutes: number;
   created_by: User | null;
   is_public: boolean;
+  is_preloaded: boolean;
   created_at: string;
   ingredients: RecipeIngredient[];
   can_make: boolean | null;
+  missing_ingredients_count: number | null;
+  available_ingredient_names?: string[];
 }
  
 export interface ItemLog {

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { RecipeService } from '../../../services/recipe.service';
 import { HouseholdService } from '../../../services/household.service';
+import { AuthService } from '../../../services/auth.service';
 import { Recipe, Household } from '../../../models/models';
 
 @Component({
@@ -23,7 +24,8 @@ export class RecipeListComponent implements OnInit {
 
   constructor(
     private recipeService: RecipeService,
-    private householdService: HouseholdService
+    private householdService: HouseholdService,
+    public authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -75,7 +77,17 @@ export class RecipeListComponent implements OnInit {
   }
 
   isOwner(recipe: Recipe): boolean {
-    return true;
+    if (recipe.is_preloaded) return false;
+    const currentUser = this.authService.currentUser;
+    if (!currentUser) return false;
+    if (recipe.created_by?.id === currentUser.id) return true;
+    return this.household?.current_user_role === 'admin';
+  }
+
+  getMissingLabel(recipe: Recipe): string {
+    if (recipe.missing_ingredients_count === null) return '';
+    if (recipe.missing_ingredients_count === 0) return 'Can make!';
+    return `Missing ${recipe.missing_ingredients_count}`;
   }
 
   getIngredientPreview(recipe: Recipe): string {

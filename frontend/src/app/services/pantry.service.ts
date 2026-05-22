@@ -18,6 +18,7 @@ export class PantryService {
     category_id?: number;
     search?: string;
     expiring_soon?: boolean;
+    expired?: boolean;
     ordering?: string;
   } = {}): Observable<PaginatedResponse<PantryItem>> {
     let httpParams = new HttpParams();

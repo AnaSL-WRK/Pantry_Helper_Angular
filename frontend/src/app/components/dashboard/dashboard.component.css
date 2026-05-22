@@ -1,50 +1,131 @@
-.dashboard { padding: 2rem 1.5rem; }
+.dashboard { padding: 1.75rem 0 2.5rem; }
 
+/* Stats */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .stat-card {
   background: white;
   border-radius: var(--radius);
-  padding: 1.25rem;
-  text-align: center;
+  padding: 1.25rem 1.4rem;
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
 }
-.stat-card.warn { border-top: 3px solid var(--warning); }
-.stat-card.danger { border-top: 3px solid var(--danger); }
-.stat-icon { font-size: 1.8rem; margin-bottom: 0.4rem; }
-.stat-value { font-size: 2rem; font-weight: 700; color: var(--primary); }
-.stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; }
+.stat-card.warn  { border-left: 4px solid var(--warning); }
+.stat-card.danger { border-left: 4px solid var(--danger); }
 
-.bottom-grid {
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+.stat-value-lg {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Collapsible "What you can do" */
+.collapsible-card {
+  margin-bottom: 1.25rem;
+}
+
+.collapsible-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+  padding: 0;
+  gap: 1rem;
+}
+.collapsible-summary::-webkit-details-marker { display: none; }
+.collapsible-summary h2 { margin-bottom: 0.1rem; font-size: 1rem; }
+.collapsible-summary p  { margin: 0; }
+
+.collapse-arrow {
+  font-size: 1.2rem;
+  color: var(--muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+details[open] .collapse-arrow { transform: rotate(180deg); }
+
+.collapsible-content {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.collapsible-content p { margin-bottom: 0.6rem; }
+
+.step-list {
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+/* Quick actions */
+.quick-actions-card {
+  margin-bottom: 1.25rem;
+}
+.quick-actions-card h2 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Dashboard grid */
+.dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
-.section-header h2 { font-size: 1rem; font-weight: 600; }
+.section-header h2 { font-size: 1rem; font-weight: 700; margin-bottom: 0; }
 
-.recipe-list { display: flex; flex-direction: column; gap: 0.75rem; }
-.recipe-card {
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+/* List rows */
+.list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
-.recipe-card:hover {
-  border-color: var(--primary);
-  box-shadow: 0 2px 8px rgba(45,122,79,0.15);
+
+.list-row {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
 }
-.recipe-name { font-weight: 500; margin-bottom: 0.25rem; }
+.list-row:last-child { border-bottom: none; }
+
+.list-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.list-row-head > div { flex: 1; min-width: 0; }
+.list-row-head strong { display: block; font-size: 0.9rem; }
+.list-row-head p { margin: 0; }
+
+.list-row strong { font-size: 0.9rem; }
+.list-row p { margin: 0; }
+
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+}

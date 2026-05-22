@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.db.models import Q
@@ -87,6 +88,18 @@ class HouseholdViewSet(viewsets.ModelViewSet):
         ctx = super().get_serializer_context()
         ctx['request'] = self.request
         return ctx
+
+    def update(self, request, *args, **kwargs):
+        household = self.get_object()
+        if not has_min_role(request.user, household, 'admin'):
+            return Response({'error': 'Only admins can edit households.'}, status=403)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        household = self.get_object()
+        if not has_min_role(request.user, household, 'admin'):
+            return Response({'error': 'Only admins can edit households.'}, status=403)
+        return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         household = self.get_object()
@@ -196,15 +209,22 @@ class PantryItemViewSet(viewsets.ModelViewSet):
             today = timezone.now().date()
             qs = qs.filter(
                 expiry_date__lte=today + timedelta(days=7),
-                expiry_date__gte=today
-            )
+                expiry_date__gte=today,
+                status='available',
+            ).order_by('expiry_date')
+
+        expired_filter = self.request.query_params.get('expired')
+        if expired_filter:
+            today = timezone.now().date()
+            qs = qs.filter(expiry_date__lt=today, status='available').order_by('expiry_date')
 
         return qs.select_related('category', 'added_by', 'household')
 
     def check_write_permission(self, household):
-        if not has_min_role(self.request.user, household, 'inventory_manager'):
-            return False
-        return True
+        return has_min_role(self.request.user, household, 'inventory_manager')
+
+    def check_consume_permission(self, household):
+        return has_min_role(self.request.user, household, 'member')
 
     def create(self, request, *args, **kwargs):
         household_id = request.data.get('household')
@@ -238,10 +258,14 @@ class PantryItemViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def consume(self, request, pk=None):
         item = self.get_object()
-        if not self.check_write_permission(item.household):
+        if not self.check_consume_permission(item.household):
             return Response({'error': 'Permission denied.'}, status=403)
         quantity = float(request.data.get('quantity', item.quantity))
-        item.quantity = max(0, item.quantity - quantity)
+        if quantity <= 0:
+            return Response({'error': 'Quantity must be greater than 0.'}, status=400)
+        if quantity > item.quantity:
+            return Response({'error': f'Cannot consume more than available ({item.quantity} {item.unit}).'}, status=400)
+        item.quantity = round(item.quantity - quantity, 6)
         if item.quantity == 0:
             item.status = 'consumed'
         item.save()
@@ -254,10 +278,14 @@ class PantryItemViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def waste(self, request, pk=None):
         item = self.get_object()
-        if not self.check_write_permission(item.household):
+        if not self.check_consume_permission(item.household):
             return Response({'error': 'Permission denied.'}, status=403)
         quantity = float(request.data.get('quantity', item.quantity))
-        item.quantity = max(0, item.quantity - quantity)
+        if quantity <= 0:
+            return Response({'error': 'Quantity must be greater than 0.'}, status=400)
+        if quantity > item.quantity:
+            return Response({'error': f'Cannot waste more than available ({item.quantity} {item.unit}).'}, status=400)
+        item.quantity = round(item.quantity - quantity, 6)
         if item.quantity == 0:
             item.status = 'wasted'
         item.save()
@@ -270,22 +298,57 @@ class PantryItemViewSet(viewsets.ModelViewSet):
 
 
 
+class RecipePagination(PageNumberPagination):
+    page_size = 1000
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+
 #recipe
 class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name', 'description', 'ingredients__name']
+    pagination_class = RecipePagination
+
+    def check_recipe_write_permission(self, recipe):
+        if recipe.is_preloaded:
+            return False
+        if recipe.created_by == self.request.user:
+            return True
+        return HouseholdMember.objects.filter(
+            user=self.request.user,
+            role='admin'
+        ).exists()
+
+    def update(self, request, *args, **kwargs):
+        recipe = self.get_object()
+        if not self.check_recipe_write_permission(recipe):
+            return Response({'error': 'You can only edit your own recipes.'}, status=403)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        recipe = self.get_object()
+        if not self.check_recipe_write_permission(recipe):
+            return Response({'error': 'You can only delete your own recipes.'}, status=403)
+        return super().destroy(request, *args, **kwargs)
 
     def get_queryset(self):
         qs = Recipe.objects.filter(
             Q(is_public=True) | Q(created_by=self.request.user)
         ).prefetch_related('ingredients')
 
+        search = self.request.query_params.get('search', '').strip()
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search) |
+                Q(description__icontains=search) |
+                Q(id__in=RecipeIngredient.objects.filter(name__icontains=search).values('recipe_id'))
+            )
+
         household_id = self.request.query_params.get('household_id')
         if household_id:
             self.household_id = household_id
-        return qs
+        return qs.distinct()
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()
@@ -311,15 +374,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         scored = []
         for recipe in recipes:
-            ingredients = recipe.ingredients.all()
+            ingredients = list(recipe.ingredients.all())
             if not ingredients:
                 continue
             matched = sum(1 for i in ingredients if i.name.lower() in pantry_names)
-            score = matched / len(ingredients)
-            if score > 0:
-                scored.append((score, recipe))
+            missing = len(ingredients) - matched
+            if matched > 0:
+                scored.append((missing, recipe))
 
-        scored.sort(key=lambda x: -x[0])
+        scored.sort(key=lambda x: x[0])
         top_recipes = [r for _, r in scored[:10]]
         serializer = RecipeSerializer(
             top_recipes, many=True,

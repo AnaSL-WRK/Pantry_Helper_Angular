@@ -17,8 +17,10 @@ export class RecipeService {
     return this.http.get<PaginatedResponse<Recipe>>(this.apiUrl + '/', { params: httpParams });
   }
 
-  get(id: number): Observable<Recipe> {
-    return this.http.get<Recipe>(`${this.apiUrl}/${id}/`);
+  get(id: number, householdId?: number): Observable<Recipe> {
+    let params = new HttpParams();
+    if (householdId) params = params.set('household_id', householdId);
+    return this.http.get<Recipe>(`${this.apiUrl}/${id}/`, { params });
   }
 
   create(data: Partial<Recipe>): Observable<Recipe> {

@@ -22,7 +22,7 @@ export class PantryItemFormComponent implements OnInit {
   error = '';
 
   units = ['units', 'g', 'kg', 'ml', 'l', 'tsp', 'tbsp', 'cup'];
-  statuses = ['available', 'low', 'consumed', 'wasted'];
+  statuses = ['available', 'consumed', 'wasted'];
 
   constructor(private fb: FormBuilder, private pantryService: PantryService) {
     this.form = this.fb.group({

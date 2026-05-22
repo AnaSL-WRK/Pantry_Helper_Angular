@@ -12,11 +12,12 @@ import { Household, HouseholdStats, PantryItem, Recipe } from '../../models/mode
   styleUrls: ['./dashboard.component.css']
 })
 
-
 export class DashboardComponent implements OnInit {
   household: Household | null = null;
   stats: HouseholdStats | null = null;
   expiringItems: PantryItem[] = [];
+  expiredItems: PantryItem[] = [];
+  pantryItems: PantryItem[] = [];
   suggestedRecipes: Recipe[] = [];
   loading = true;
 
@@ -41,21 +42,55 @@ export class DashboardComponent implements OnInit {
 
   loadData(householdId: number): void {
     this.loading = true;
+
     this.householdService.getStats(householdId).subscribe({
       next: stats => { this.stats = stats; },
       error: () => {}
     });
-    this.pantryService.getItems({ household_id: householdId, expiring_soon: true }).subscribe({
+
+    this.pantryService.getItems({
+      household_id: householdId,
+      status: 'available',
+      ordering: '-added_at',
+    }).subscribe({
+      next: res => { this.pantryItems = res.results.slice(0, 5); },
+      error: () => {}
+    });
+
+    this.pantryService.getItems({
+      household_id: householdId,
+      expiring_soon: true,
+    }).subscribe({
       next: res => { this.expiringItems = res.results.slice(0, 5); },
       error: () => {}
     });
+
+    this.pantryService.getItems({
+      household_id: householdId,
+      expired: true,
+    }).subscribe({
+      next: res => { this.expiredItems = res.results.slice(0, 5); },
+      error: () => {}
+    });
+
     this.recipeService.getSuggested(householdId).subscribe({
       next: recipes => {
-        this.suggestedRecipes = recipes.slice(0, 3);
+        this.suggestedRecipes = recipes.slice(0, 5);
         this.loading = false;
       },
       error: () => { this.loading = false; }
     });
+  }
+
+  getRoleLabel(): string {
+    const labels: Record<string, string> = {
+      admin: 'Household Admin',
+      inventory_manager: 'Inventory Manager',
+      member: 'Member',
+      viewer: 'Viewer',
+    };
+    const role = this.household?.current_user_role;
+    return role ? (labels[role] || role) : 'No role';
   }
 
   getDaysLabel(days: number | null): string {
@@ -72,5 +107,14 @@ export class DashboardComponent implements OnInit {
     if (days <= 2) return 'badge badge-danger';
     if (days <= 7) return 'badge badge-warning';
     return 'badge badge-success';
+  }
+
+  canWrite(): boolean {
+    const role = this.household?.current_user_role;
+    return role === 'admin' || role === 'inventory_manager';
+  }
+
+  isAdmin(): boolean {
+    return this.household?.current_user_role === 'admin';
   }
 }

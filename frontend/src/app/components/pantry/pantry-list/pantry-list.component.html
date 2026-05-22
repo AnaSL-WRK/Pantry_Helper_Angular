@@ -17,12 +17,11 @@
     <div class="filters card">
       <div class="filters-row">
         <input class="form-control" [(ngModel)]="searchTerm"
-          (ngModelChange)="onSearch()" placeholder="🔍 Search items...">
+          (ngModelChange)="onSearch()" placeholder="Search items...">
 
         <select class="form-control" [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
           <option value="">All statuses</option>
           <option value="available">Available</option>
-          <option value="low">Low Stock</option>
           <option value="consumed">Consumed</option>
           <option value="wasted">Wasted</option>
         </select>
@@ -69,7 +68,7 @@
             <th>Expiry</th>
             <th>Status</th>
             <th>Added by</th>
-            <th *ngIf="canWrite()">Actions</th>
+            <th *ngIf="canWrite() || canConsume()">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -93,14 +92,14 @@
               <span [class]="'badge status-' + item.status">{{ item.status }}</span>
             </td>
             <td class="text-sm text-muted">{{ item.added_by?.username || '-' }}</td>
-            <td *ngIf="canWrite()">
+            <td *ngIf="canWrite() || canConsume()">
               <div class="action-btns">
-                <button class="btn btn-sm btn-outline" title="Edit" (click)="openEdit(item)">Edit</button>
-                <button class="btn btn-sm btn-secondary" title="Consume" (click)="openConsume(item)"
+                <button class="btn btn-sm btn-outline" *ngIf="canWrite()" title="Edit" (click)="openEdit(item)">Edit</button>
+                <button class="btn btn-sm btn-secondary" *ngIf="canConsume()" title="Consume" (click)="openConsume(item)"
                   [disabled]="item.status !== 'available'">Consume</button>
-                <button class="btn btn-sm btn-warning" title="Mark as wasted" (click)="openWaste(item)"
+                <button class="btn btn-sm btn-warning" *ngIf="canConsume()" title="Mark as wasted" (click)="openWaste(item)"
                   [disabled]="item.status !== 'available'">Mark as Wasted</button>
-                <button class="btn btn-sm btn-danger" title="Delete" (click)="deleteItem(item)">Delete</button>
+                <button class="btn btn-sm btn-danger" *ngIf="canWrite()" title="Delete" (click)="deleteItem(item)">Delete</button>
               </div>
             </td>
           </tr>

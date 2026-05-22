@@ -8,6 +8,7 @@ import { AppComponent } from './app.component';
 import { AuthInterceptor } from './services/auth.interceptor';
 
 //components
+import { LandingComponent } from './components/landing/landing.component';
 import { NavComponent } from './components/nav/nav.component';
 import { LoginComponent } from './components/auth/login/login.component';
 import { RegisterComponent } from './components/auth/register/register.component';
@@ -25,6 +26,7 @@ import { RecipeFormComponent } from './components/recipes/recipe-form/recipe-for
 @NgModule({
   declarations: [
     AppComponent,
+    LandingComponent,
     NavComponent,
     LoginComponent,
     RegisterComponent,

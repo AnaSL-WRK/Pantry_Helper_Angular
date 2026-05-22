@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard, GuestGuard } from './guards/auth.guard';
 
+import { LandingComponent } from './components/landing/landing.component';
 import { LoginComponent } from './components/auth/login/login.component';
 import { RegisterComponent } from './components/auth/register/register.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
@@ -13,8 +14,8 @@ import { RecipeDetailComponent } from './components/recipes/recipe-detail/recipe
 import { ProfileComponent } from './components/auth/profile/profile.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { path: '**', redirectTo: 'dashboard' },
+  { path: '', component: LandingComponent, canActivate: [GuestGuard] },
+
   { path: 'login', component: LoginComponent, canActivate: [GuestGuard] },
   { path: 'register', component: RegisterComponent, canActivate: [GuestGuard] },
 
@@ -27,6 +28,8 @@ const routes: Routes = [
   { path: 'recipes/:id', component: RecipeDetailComponent, canActivate: [AuthGuard] },
 
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
+
+  { path: '**', redirectTo: 'dashboard' }, //always last
 ];
 
 @NgModule({

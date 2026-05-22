@@ -2,109 +2,217 @@
 
   <!-- no household -->
   <div *ngIf="!household && !loading" class="empty-state card">
-    <h3>No household selected</h3>
-    <p>Create or join a household to get started</p>
-    <a routerLink="/households" class="btn btn-primary" style="margin-top:1rem">
-      Go to Households
-    </a>
+    <span class="eyebrow">Get started</span>
+    <h2>You are not part of a household yet.</h2>
+    <p class="page-subtitle">Create a household first so you can start managing pantry items and recipes.</p>
+    <div class="page-actions" style="justify-content: center; margin-top: 1rem;">
+      <a routerLink="/households" class="btn btn-primary">Create household</a>
+    </div>
   </div>
 
   <div *ngIf="loading" class="spinner"></div>
 
   <ng-container *ngIf="household && !loading">
-    <!-- header -->
+
+    <!-- page header -->
     <div class="page-header">
       <div>
-        <h1>{{ household.name }}</h1>
-        <p class="text-muted">Welcome back, {{ authService.currentUser?.first_name || authService.currentUser?.username }}!</p>
-      </div>
-      <a routerLink="/pantry" class="btn btn-primary">+ Add Item</a>
-    </div>
-
-    <!-- stats -->
-    <div class="stats-grid" *ngIf="stats">
-      <div class="stat-card">
-        <div class="stat-value">{{ stats.total_items }}</div>
-        <div class="stat-label">Items Available</div>
-      </div>
-      <div class="stat-card warn" *ngIf="stats.expiring_soon > 0">
-        <div class="stat-value">{{ stats.expiring_soon }}</div>
-        <div class="stat-label">Expiring Soon</div>
-      </div>
-      <div class="stat-card" [class.danger]="stats.expired > 0">
-        <div class="stat-value">{{ stats.expired }}</div>
-        <div class="stat-label">Expired</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ stats.wasted }}</div>
-        <div class="stat-label">Wasted</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ stats.consumed }}</div>
-        <div class="stat-label">Consumed</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ stats.categories }}</div>
-        <div class="stat-label">Categories</div>
+        <span class="eyebrow">Overview</span>
+        <h1>Dashboard</h1>
+        <p class="page-subtitle">Your household summary, pantry status, and recipe suggestions.</p>
       </div>
     </div>
 
-    <div class="bottom-grid">
-      <!--expiring soon -->
-      <div class="card">
-        <div class="section-header">
-          <h2>Expiring Soon</h2>
-          <a routerLink="/pantry" [queryParams]="{expiring_soon: true}" class="btn btn-sm btn-outline">View all</a>
-        </div>
-        <div *ngIf="expiringItems.length === 0" class="empty-state" style="padding: 2rem">
-          <p>No items expiring in the next 7 days</p>
-        </div>
-        <table *ngIf="expiringItems.length > 0">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Qty</th>
-              <th>Expires</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of expiringItems">
-              <td>
-                <span *ngIf="item.category">{{ item.category.name }} </span>
-                {{ item.name }}
-              </td>
-              <td>{{ item.quantity }} {{ item.unit }}</td>
-              <td>
-                <span [class]="getDaysBadge(item.days_until_expiry)">
-                  {{ getDaysLabel(item.days_until_expiry) }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- stat cards -->
+    <div class="stats-grid">
+      <article class="stat-card">
+        <span class="stat-label">Household</span>
+        <div class="stat-value-lg">{{ household.name }}</div>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Your role</span>
+        <div class="stat-value-lg">{{ getRoleLabel() }}</div>
+      </article>
+      <article class="stat-card" [class.warn]="(stats?.expiring_soon ?? 0) > 0">
+        <span class="stat-label">Expiring soon</span>
+        <div class="stat-value-lg">{{ stats?.expiring_soon ?? 0 }}</div>
+      </article>
+      <article class="stat-card" [class.danger]="(stats?.expired ?? 0) > 0">
+        <span class="stat-label">Expired</span>
+        <div class="stat-value-lg">{{ stats?.expired ?? 0 }}</div>
+      </article>
+    </div>
 
-      <!-- suggested recipes -->
-      <div class="card">
+    <!-- what you can do -->
+    <details class="card collapsible-card">
+      <summary class="collapsible-summary">
+        <div>
+          <h2>What you can do</h2>
+          <p class="text-muted text-sm">Click to view your permissions.</p>
+        </div>
+        <span class="collapse-arrow">⌄</span>
+      </summary>
+      <div class="collapsible-content">
+
+        <div *ngIf="household.current_user_role === 'viewer'">
+          <p>You are in <strong>read-only mode</strong>.</p>
+          <ul class="step-list">
+            <li>You can view pantry items, recipes, and suggested recipes.</li>
+            <li>You cannot add, edit, or delete pantry items.</li>
+            <li>You cannot mark food as consumed or wasted.</li>
+            <li>You cannot create, edit, or delete recipes.</li>
+            <li>You cannot manage the household or its members.</li>
+          </ul>
+        </div>
+
+        <div *ngIf="household.current_user_role === 'member'">
+          <p>You can help track food usage.</p>
+          <ul class="step-list">
+            <li>You can view pantry items, recipes, and suggested recipes.</li>
+            <li>You can mark pantry items as consumed or wasted.</li>
+            <li>You cannot add, edit, or delete pantry items.</li>
+            <li>You cannot create, edit, or delete recipes.</li>
+            <li>You cannot manage the household or its members.</li>
+          </ul>
+        </div>
+
+        <div *ngIf="household.current_user_role === 'inventory_manager'">
+          <p>You can manage pantry stock, but not the household itself.</p>
+          <ul class="step-list">
+            <li>You can view pantry items, recipes, and suggested recipes.</li>
+            <li>You can add, edit, and delete pantry items.</li>
+            <li>You can mark pantry items as consumed or wasted.</li>
+            <li>You cannot create, edit, or delete household recipes.</li>
+            <li>You cannot manage household details or members.</li>
+          </ul>
+        </div>
+
+        <div *ngIf="household.current_user_role === 'admin'">
+          <p>You have full household access.</p>
+          <ul class="step-list">
+            <li>You can view pantry items, recipes, and suggested recipes.</li>
+            <li>You can add, edit, and delete pantry items.</li>
+            <li>You can mark pantry items as consumed or wasted.</li>
+            <li>You can create, edit, and delete household recipes.</li>
+            <li>You can manage the household — edit details, add members, change roles, and remove members.</li>
+          </ul>
+        </div>
+
+      </div>
+    </details>
+
+    <!-- quick actions -->
+    <section class="card quick-actions-card">
+      <h2>Quick actions</h2>
+      <div class="page-actions">
+        <a routerLink="/pantry" class="btn btn-secondary">View pantry</a>
+        <a routerLink="/pantry" class="btn btn-secondary" *ngIf="canWrite()">Add food</a>
+        <a routerLink="/recipes" class="btn btn-secondary">Browse recipes</a>
+        <a routerLink="/recipes" class="btn btn-secondary" *ngIf="isAdmin()">Create recipe</a>
+        <a routerLink="/households" class="btn btn-secondary">Household</a>
+      </div>
+    </section>
+
+    <!-- dashboard grid -->
+    <div class="dashboard-grid">
+
+      <!-- pantry overview -->
+      <section class="card">
         <div class="section-header">
-          <h2>Recipe Suggestions</h2>
-          <a routerLink="/recipes" class="btn btn-sm btn-outline">All recipes</a>
+          <h2>Pantry overview</h2>
+          <a routerLink="/pantry" class="btn btn-sm btn-outline">View all</a>
         </div>
-        <div *ngIf="suggestedRecipes.length === 0" class="empty-state" style="padding: 2rem">
-          <p>Add more items to get recipe suggestions</p>
-        </div>
-        <div class="recipe-list">
-          <div class="recipe-card" *ngFor="let recipe of suggestedRecipes"
-            [routerLink]="['/recipes', recipe.id]">
-            <div class="recipe-name">{{ recipe.name }}</div>
-            <div class="recipe-meta text-muted text-sm">
-              {{ recipe.prep_time_minutes }} min &nbsp;·&nbsp;
-              {{ recipe.servings }} servings
+        <div class="list-stack">
+          <div class="list-row" *ngFor="let item of pantryItems">
+            <div class="list-row-head">
+              <div>
+                <strong>{{ item.name }}</strong>
+                <p class="text-muted text-sm">{{ item.quantity }} {{ item.unit }}</p>
+              </div>
+              <span class="badge badge-muted" *ngIf="item.expiry_date">
+                Expires {{ item.expiry_date | slice:0:10 }}
+              </span>
+              <span class="text-muted text-sm" *ngIf="!item.expiry_date">No date</span>
             </div>
-            <span class="badge badge-success" *ngIf="recipe.can_make">Can make!</span>
+          </div>
+          <div *ngIf="pantryItems.length === 0" class="empty-state" style="padding: 1.5rem">
+            <p class="text-muted">No pantry items yet.</p>
           </div>
         </div>
-      </div>
+      </section>
+
+      <!-- expiring soon -->
+      <section class="card">
+        <div class="section-header">
+          <h2>Expiring soon</h2>
+          <a routerLink="/pantry" [queryParams]="{expiring_soon: true}" class="btn btn-sm btn-outline">View all</a>
+        </div>
+        <div class="list-stack">
+          <div class="list-row" *ngFor="let item of expiringItems">
+            <strong>{{ item.name }}</strong>
+            <p class="text-muted text-sm">
+              {{ item.quantity }} {{ item.unit }} · expires {{ item.expiry_date | slice:0:10 }}
+            </p>
+          </div>
+          <div *ngIf="expiringItems.length === 0" class="empty-state" style="padding: 1.5rem">
+            <p class="text-muted">No foods expiring in the next 7 days.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- expired foods -->
+      <section class="card">
+        <div class="section-header">
+          <h2>Expired foods</h2>
+        </div>
+        <div class="list-stack">
+          <div class="list-row" *ngFor="let item of expiredItems">
+            <strong>{{ item.name }}</strong>
+            <p class="text-muted text-sm">
+              {{ item.quantity }} {{ item.unit }} · expired {{ item.expiry_date | slice:0:10 }}
+            </p>
+          </div>
+          <div *ngIf="expiredItems.length === 0" class="empty-state" style="padding: 1.5rem">
+            <p class="text-muted">No expired foods.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- suggested recipes -->
+      <section class="card">
+        <div class="section-header">
+          <h2>Suggested recipes</h2>
+          <a routerLink="/recipes" class="btn btn-sm btn-outline">Browse all</a>
+        </div>
+        <p class="text-muted text-sm" style="margin-bottom: 0.75rem">
+          Recipes that use ingredients you already have.
+        </p>
+        <div class="list-stack">
+          <div class="list-row" *ngFor="let recipe of suggestedRecipes"
+            [routerLink]="['/recipes', recipe.id]" style="cursor:pointer">
+            <div class="list-row-head">
+              <div>
+                <strong>{{ recipe.name }}</strong>
+                <p class="text-muted text-sm">
+                  {{ recipe.ingredients.length }} ingredients ·
+                  {{ recipe.prep_time_minutes }} min
+                </p>
+              </div>
+              <div class="flex gap-1">
+                <span class="badge badge-success" *ngIf="recipe.can_make">Can make!</span>
+                <span class="badge badge-warning"
+                  *ngIf="!recipe.can_make && recipe.missing_ingredients_count !== null && recipe.missing_ingredients_count > 0">
+                  Missing {{ recipe.missing_ingredients_count }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="suggestedRecipes.length === 0" class="empty-state" style="padding: 1.5rem">
+            <p class="text-muted">No recipe suggestions yet. Add more pantry items!</p>
+          </div>
+        </div>
+      </section>
+
     </div>
   </ng-container>
 </div>

@@ -140,31 +140,55 @@ class RecipeSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(many=True)
     created_by = UserPublicSerializer(read_only=True)
     can_make = serializers.SerializerMethodField()
+    missing_ingredients_count = serializers.SerializerMethodField()
+    available_ingredient_names = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
         fields = ['id', 'name', 'description', 'instructions', 'servings',
-                  'prep_time_minutes', 'created_by', 'is_public', 'created_at',
-                  'ingredients', 'can_make']
-        read_only_fields = ['created_by', 'created_at']
+                  'prep_time_minutes', 'created_by', 'is_public', 'is_preloaded', 'created_at',
+                  'ingredients', 'can_make', 'missing_ingredients_count', 'available_ingredient_names']
+        read_only_fields = ['created_by', 'created_at', 'is_preloaded']
 
-    def get_can_make(self, obj):
+    def _get_pantry_map(self, household_id):
+        cache_key = f'_pantry_map_{household_id}'
+        if cache_key not in self.context:
+            pantry_items = PantryItem.objects.filter(
+                household_id=household_id,
+                status='available'
+            )
+            self.context[cache_key] = {item.name.lower(): item.quantity for item in pantry_items}
+        return self.context[cache_key]
+
+    def _get_household_id(self):
         request = self.context.get('request')
-        household_id = self.context.get('household_id') or (
+        return self.context.get('household_id') or (
             request.query_params.get('household_id') if request else None
         )
+
+    def get_can_make(self, obj):
+        household_id = self._get_household_id()
         if not household_id:
             return None
-        pantry_items = PantryItem.objects.filter(
-            household_id=household_id,
-            status='available'
-        )
-        pantry_map = {item.name.lower(): item.quantity for item in pantry_items}
-        for ingredient in obj.ingredients.all():
-            available = pantry_map.get(ingredient.name.lower(), 0)
-            if available < ingredient.quantity:
-                return False
-        return True
+        pantry_map = self._get_pantry_map(household_id)
+        ingredients = list(obj.ingredients.all())
+        if not ingredients:
+            return False
+        return all(ing.name.lower() in pantry_map for ing in ingredients)
+
+    def get_missing_ingredients_count(self, obj):
+        household_id = self._get_household_id()
+        if not household_id:
+            return None
+        pantry_map = self._get_pantry_map(household_id)
+        return sum(1 for ing in obj.ingredients.all() if ing.name.lower() not in pantry_map)
+
+    def get_available_ingredient_names(self, obj):
+        household_id = self._get_household_id()
+        if not household_id:
+            return []
+        pantry_map = self._get_pantry_map(household_id)
+        return [ing.name.lower() for ing in obj.ingredients.all() if ing.name.lower() in pantry_map]
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')

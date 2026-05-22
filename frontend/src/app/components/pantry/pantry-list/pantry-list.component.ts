@@ -89,6 +89,7 @@ export class PantryListComponent implements OnInit {
 
   confirmConsume(): void {
     if (!this.actionItem) return;
+    if (this.actionQty <= 0 || this.actionQty > this.actionItem.quantity) return;
     this.pantryService.consumeItem(this.actionItem.id, this.actionQty).subscribe({
       next: () => { this.showConsumeModal = false; this.load(); }
     });
@@ -96,6 +97,7 @@ export class PantryListComponent implements OnInit {
 
   confirmWaste(): void {
     if (!this.actionItem) return;
+    if (this.actionQty <= 0 || this.actionQty > this.actionItem.quantity) return;
     this.pantryService.wasteItem(this.actionItem.id, this.actionQty).subscribe({
       next: () => { this.showWasteModal = false; this.load(); }
     });
@@ -113,7 +115,6 @@ export class PantryListComponent implements OnInit {
     if (item.days_until_expiry !== null && item.days_until_expiry <= 3) return 'badge badge-warning';
     const map: Record<string, string> = {
       available: 'badge status-available',
-      low: 'badge status-low',
       consumed: 'badge status-consumed',
       wasted: 'badge status-wasted',
     };
@@ -133,5 +134,10 @@ export class PantryListComponent implements OnInit {
   canWrite(): boolean {
     const role = this.household?.current_user_role;
     return role === 'admin' || role === 'inventory_manager';
+  }
+
+  canConsume(): boolean {
+    const role = this.household?.current_user_role;
+    return role === 'admin' || role === 'inventory_manager' || role === 'member';
   }
 }

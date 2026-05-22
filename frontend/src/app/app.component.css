@@ -1,4 +1,8 @@
-main.with-nav {
-  padding-top: 64px;
+main {
   min-height: 100vh;
+  padding-bottom: 2.5rem;
+}
+
+main.with-nav {
+  padding-top: 1.5rem;
 }

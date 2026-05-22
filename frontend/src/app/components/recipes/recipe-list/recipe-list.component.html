@@ -33,7 +33,13 @@
         [routerLink]="['/recipes', recipe.id]">
         <div class="recipe-card-header">
           <span class="recipe-name">{{ recipe.name }}</span>
-          <span class="badge badge-success" *ngIf="recipe.can_make">Can make!</span>
+          <div class="flex gap-1">
+            <span class="badge badge-success" *ngIf="recipe.can_make">Can make!</span>
+            <span class="badge badge-warning"
+              *ngIf="!recipe.can_make && recipe.missing_ingredients_count !== null && recipe.missing_ingredients_count > 0">
+              Missing {{ recipe.missing_ingredients_count }}
+            </span>
+          </div>
         </div>
         <p class="text-sm text-muted">{{ recipe.description }}</p>
         <div class="recipe-meta">
@@ -64,7 +70,9 @@
         <span class="recipe-name">{{ recipe.name }}</span>
         <div class="flex gap-1" *ngIf="recipe.can_make !== null">
           <span class="badge badge-success" *ngIf="recipe.can_make">Can make!</span>
-          <span class="badge badge-muted" *ngIf="!recipe.can_make">Missing ingredients</span>
+          <span class="badge badge-warning" *ngIf="!recipe.can_make && recipe.missing_ingredients_count !== null && recipe.missing_ingredients_count > 0">
+            Missing {{ recipe.missing_ingredients_count }}
+          </span>
         </div>
       </div>
       <p class="text-sm text-muted recipe-desc" *ngIf="recipe.description">
@@ -81,7 +89,7 @@
           <span>{{ recipe.prep_time_minutes }} min</span>
           <span>{{ recipe.servings }}</span>
         </div>
-        <div class="recipe-actions" (click)="$event.stopPropagation()">
+        <div class="recipe-actions" *ngIf="isOwner(recipe)" (click)="$event.stopPropagation()">
           <button class="btn btn-sm btn-outline" (click)="openEdit(recipe, $event)">Edit</button>
           <button class="btn btn-sm btn-danger" (click)="deleteRecipe(recipe, $event)">Delete</button>
         </div>

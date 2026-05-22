@@ -57,7 +57,6 @@ class PantryItem(models.Model):
 
     STATUS_CHOICES = [
         ('available', 'Available'),
-        ('low', 'Low Stock'),
         ('consumed', 'Consumed'),
         ('wasted', 'Wasted'),
     ]
