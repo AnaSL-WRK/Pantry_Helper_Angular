@@ -1,104 +1,94 @@
 # Pantry Helper - TP2
 
-> **Technologies and Web Programming - Practical Work 2**
-> Angular + Django REST Framework conversion of Pantry Helper (TP1)
+> **Tecnologias e Programação Web - Trabalho Prático 2**
+> Conversão do Pantry Helper (TP1) para arquitetura desacoplada com **Angular 17 + Django REST Framework**.
 
 ---
 
 ## Overview
 
-Pantry Helper is a household pantry and recipe management web application. This TP2 version replaces the Django template-based frontend (TP1) with a decoupled architecture:
+Pantry Helper is a household pantry-management web application that helps families track what they have, what's about to expire, and what they can cook with it. This TP2 version replaces the Django template frontend used in TP1 with a clean two-tier setup:
 
-- **Backend:** Django 5 + Django REST Framework - REST API with Token Authentication
+- **Backend:** Django REST Framework (DRF) - REST API
 - **Frontend:** Angular 17 - Single Page Application (SPA)
+
+The two layers are fully decoupled, communicate over HTTP/JSON, and can be deployed independently.
 
 ---
 
 ## Features
 
-| Feature | Details |
-|---|---|
-| Authentication | Register, login, logout - Token-based (DRF) |
-| Households | Create households, invite members, assign roles |
-| Role-based access | Viewer / Member / Inventory Manager / Household Admin |
-| Pantry Management | Add, edit, consume, waste, and delete pantry items |
-| Expiry Tracking | Visual alerts for items expiring soon or already expired |
-| Category Filtering | Organise items by food category |
-| Recipe Management | Create, browse, and view recipes with ingredients |
-| Recipe Suggestions | Recipes matched against your current pantry (sorted by fewest missing) |
-| Ingredient Availability | ✅/❌ next to each ingredient when viewing a recipe |
-| Partial Search | Search recipes by name, description, or partial ingredient name |
-| Activity Log | View recent add/consume/waste actions per household |
-| Dashboard | Stats, role summary, expiring / expired items, recipe suggestions |
-| Landing Page | Public home page for unauthenticated visitors |
-| 500 Preloaded Recipes | Loaded from fixture - read-only, available to all users |
-
----
-
-## Role Permissions
-
-| Action | Viewer | Member | Inv. Manager | Admin |
-|---|:---:|:---:|:---:|:---:|
-| View pantry items | ✅ | ✅ | ✅ | ✅ |
-| View recipes | ✅ | ✅ | ✅ | ✅ |
-| View suggested recipes | ✅ | ✅ | ✅ | ✅ |
-| Mark items as consumed / wasted | ❌ | ✅ | ✅ | ✅ |
-| Add / edit / delete pantry items | ❌ | ❌ | ✅ | ✅ |
-| Create / edit / delete recipes | ❌ | ❌ | ❌ | ✅ |
-| Edit household details | ❌ | ❌ | ❌ | ✅ |
-| Add / remove / change member roles | ❌ | ❌ | ❌ | ✅ |
-
-> **Notes:**
-> - Any user can create a recipe; only the creator or a Household Admin can edit or delete it.
-> - Preloaded recipes (`is_preloaded = True`) are read-only - nobody can edit or delete them.
-> - `can_make` / missing-ingredient badges only appear when the household pantry has at least one item.
+- **Authentication** - Register, login, logout with DRF Token Authentication; a public landing page is shown to anonymous visitors
+- **Households** - Create and manage households, search for and invite members, assign roles
+- **Role-based access** - `Viewer` / `Member` / `Inventory Manager` / `Household Admin`
+- **Pantry Management** - Add, edit, consume, waste, and delete pantry items (partial consume/waste supported)
+- **Expiry Tracking** - Visual alerts for items expiring soon or already expired
+- **Category Filtering & Search** - Filter by category, status, expiring soon, expired, plus full-text search
+- **Recipe Management** - Create, browse, and view recipes with ingredients; ~500 preloaded recipes
+- **Recipe Suggestions** - Recipes scored against the available pantry, ranked by missing-ingredient count
+- **Activity Log** - Per-household history of add / update / consume / waste / delete actions
+- **Dashboard** - Stats overview + expiring items + expired items + suggested recipes at a glance
 
 ---
 
 ## Project Structure
 
 ```
-pantry_helper_tp2/
-├── backend/
+Pantry_Helper_Angular/
+├── backend/                              # Django REST Framework
 │   ├── manage.py
 │   ├── requirements.txt
-│   ├── pantry_api/               # Django project settings
+│   ├── pantry_api/                       # Django project settings
 │   │   ├── settings.py
 │   │   ├── urls.py
 │   │   └── wsgi.py
-│   └── api/                      # Main app
-│       ├── models.py             # Household, PantryItem, Recipe, …
-│       ├── serializers.py        # DRF serializers (computed: can_make, missing_ingredients_count, available_ingredient_names)
-│       ├── views.py              # ViewSets + Auth views
+│   └── api/                              # Main app
+│       ├── models.py                     # Household, PantryItem, Recipe, ItemLog, ...
+│       ├── serializers.py
+│       ├── views.py                      # ViewSets + Auth views
 │       ├── urls.py
-│       ├── permissions.py        # Role helpers: get_user_role, has_min_role
-│       ├── migrations/
-│       │   └── 0002_remove_low_status.py
+│       ├── permissions.py                # Role-based permissions
+│       ├── admin.py
+│       ├── fixtures/
+│       │   └── wasteless_recipes_500.json
 │       └── management/commands/
-│           ├── load_recipes_from_json.py   # loads 500 preloaded recipes
-│           └── load_demo_data.py           # demo accounts + household
+│           ├── load_demo_data.py
+│           └── load_recipes_from_json.py
 │
-└── frontend/
+└── frontend/                             # Angular 17
     ├── angular.json
     ├── package.json
+    ├── tsconfig.json
     └── src/
-        ├── styles.css            # Global css
+        ├── styles.css                    # Global styles (CSS variables)
+        ├── index.html
+        ├── main.ts
         ├── environments/
+        │   ├── environment.ts
+        │   └── environment.prod.ts
         └── app/
             ├── app.module.ts
             ├── app-routing.module.ts
-            ├── models/           # TypeScript interfaces
-            ├── services/         # Auth, Household, Pantry, Recipe
-            ├── guards/           # AuthGuard, GuestGuard
+            ├── models/models.ts          # TypeScript interfaces
+            ├── services/                 # AuthService + interceptor, Household / Pantry / Recipe services
+            ├── guards/auth.guard.ts      # AuthGuard, GuestGuard
             └── components/
-                ├── landing/      # Public home page
+                ├── landing/              # Public landing page
                 ├── nav/
-                ├── auth/         # login, register, profile
+                ├── auth/                 # login, register, profile
                 ├── dashboard/
-                ├── household/    # list, detail
-                ├── pantry/       # list, item-form
-                └── recipes/      # list, detail, form
+                ├── household/            # list, detail, form
+                ├── pantry/               # list, item-form
+                └── recipes/              # list, detail, form
 ```
+
+---
+
+## Tech Stack
+
+**Backend** - Python 3.10+, Django 4.2, Django REST Framework 3.14, django-cors-headers, SQLite (dev), `rest_framework.authtoken` for Token Authentication.
+
+**Frontend** - Angular 17, TypeScript 5.2, RxJS, Angular HttpClient (with a custom `AuthInterceptor`), Reactive Forms, Angular Router with Route Guards.
 
 ---
 
@@ -107,8 +97,7 @@ pantry_helper_tp2/
 ### Requirements
 - Python 3.10+
 
-### 1. Create virtual environment
-
+### 1. Create a virtual environment
 ```bash
 cd backend
 python -m venv venv
@@ -117,54 +106,42 @@ venv\Scripts\activate           # Windows
 ```
 
 ### 2. Install dependencies
-
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 3. Apply migrations
-
 ```bash
 python manage.py migrate
 ```
 
-### 4. Load preloaded recipes (optional but recommended)
-
+### 4. Load demo data (optional, recommended)
 ```bash
-python manage.py load_recipes_from_json
+python manage.py load_recipes_from_json     # ~500 preloaded public recipes
+python manage.py load_demo_data             # 4 demo users + household + items
 ```
 
-Loads 500 public, read-only recipes from `api/fixtures/wasteless_recipes_500.json`.
+Demo accounts (all share the password `demo1234`):
 
-### 5. Load demo accounts (optional)
+| Username       | Password   | Role               |
+|----------------|------------|--------------------|
+| `demo_admin`   | `demo1234` | Household Admin    |
+| `demo_manager` | `demo1234` | Inventory Manager  |
+| `demo_member`  | `demo1234` | Member             |
+| `demo_viewer`  | `demo1234` | Viewer             |
 
-```bash
-python manage.py load_demo_data
-```
-
-Creates 4 demo users sharing a "Demo Household" with pantry items and recipes:
-
-| Username | Password | Role |
-|---|---|---|
-| demo_admin | demo1234 | Household Admin |
-| demo_manager | demo1234 | Inventory Manager |
-| demo_member | demo1234 | Member |
-| demo_viewer | demo1234 | Viewer |
-
-### 6. Create superuser (optional)
-
+### 5. (Optional) Create a Django superuser for the admin panel
 ```bash
 python manage.py createsuperuser
 ```
 
-### 7. Run the development server
-
+### 6. Run the development server
 ```bash
 python manage.py runserver
 ```
 
-- API: **http://127.0.0.1:8000/api/**
-- Admin panel: **http://127.0.0.1:8000/admin/**
+- API:        <http://127.0.0.1:8000/api/>
+- Admin:      <http://127.0.0.1:8000/admin/>
 
 ---
 
@@ -172,126 +149,118 @@ python manage.py runserver
 
 ### Requirements
 - Node.js 18+
-- Angular CLI 17+
-
-```bash
-npm install -g @angular/cli
-```
+- Angular CLI 17 (`npm install -g @angular/cli`)
 
 ### 1. Install dependencies
-
 ```bash
 cd frontend
 npm install
 ```
 
 ### 2. Run the dev server
-
 ```bash
 ng serve
 ```
 
-App available at: **http://localhost:4200**
-
-> Make sure the Django backend is running at `http://127.0.0.1:8000`.
+The app is served at <http://localhost:4200>. **The backend must be running** at `http://127.0.0.1:8000`.
 
 ---
 
-## REST API Reference
+## REST API Endpoints
 
-### Auth
+All endpoints require Token Authentication except `register` and `login`. Pass the token as `Authorization: Token <token>` on every authenticated request - the Angular `AuthInterceptor` does this automatically.
 
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| POST | `/api/auth/register/` | Register new user | ❌ |
-| POST | `/api/auth/login/` | Login, receive token | ❌ |
-| POST | `/api/auth/logout/` | Logout, delete token | ✅ |
-| GET / PATCH | `/api/auth/profile/` | View / update own profile | ✅ |
-| GET | `/api/auth/search-user/?username=` | Find user by username | ✅ |
+### Authentication
+
+| Method        | Endpoint                  | Description                          | Auth |
+|---------------|---------------------------|--------------------------------------|------|
+| POST          | `/api/auth/register/`     | Register new user                    | No   |
+| POST          | `/api/auth/login/`        | Login, returns a token               | No   |
+| POST          | `/api/auth/logout/`       | Logout (invalidate token)            | Yes  |
+| GET / PATCH   | `/api/auth/profile/`      | Get / update current profile         | Yes  |
+| GET           | `/api/auth/search-user/`  | Look up a user by username           | Yes  |
 
 ### Households
 
-| Method | Endpoint | Description | Min role |
-|---|---|---|---|
-| GET / POST | `/api/households/` | List / create | Member |
-| GET | `/api/households/{id}/` | Detail | Member |
-| PATCH / DELETE | `/api/households/{id}/` | Edit / delete | Admin |
-| GET | `/api/households/{id}/stats/` | Pantry statistics | Member |
-| GET / POST | `/api/households/{id}/members/` | List / add members | Admin (write) |
-| PATCH / DELETE | `/api/households/{id}/members/{mid}/` | Change role / remove | Admin |
+| Method               | Endpoint                                | Description              | Auth          |
+|----------------------|-----------------------------------------|--------------------------|---------------|
+| GET / POST           | `/api/households/`                      | List / create            | Yes           |
+| GET / PATCH / DELETE | `/api/households/{id}/`                 | Detail / edit / delete   | Yes / Admin   |
+| GET / POST           | `/api/households/{id}/members/`         | List / add members       | Yes / Admin   |
+| PATCH / DELETE       | `/api/households/{id}/members/{mid}/`   | Update / remove member   | Admin         |
+| GET                  | `/api/households/{id}/stats/`           | Household statistics     | Yes           |
 
-### Pantry Items
+### Pantry items
 
-| Method | Endpoint | Description | Min role |
-|---|---|---|---|
-| GET | `/api/pantry-items/` | List (filterable) | Viewer |
-| POST | `/api/pantry-items/` | Create item | Inv. Manager |
-| GET / PATCH / DELETE | `/api/pantry-items/{id}/` | Detail / edit / delete | Inv. Manager (write) |
-| POST | `/api/pantry-items/{id}/consume/` | Consume quantity | Member |
-| POST | `/api/pantry-items/{id}/waste/` | Mark as wasted | Member |
+| Method               | Endpoint                              | Description                | Auth                 |
+|----------------------|---------------------------------------|----------------------------|----------------------|
+| GET / POST           | `/api/pantry-items/`                  | List / create items        | Yes / Inv. Manager+  |
+| GET / PATCH / DELETE | `/api/pantry-items/{id}/`             | Detail / edit / delete     | Yes / Inv. Manager+  |
+| POST                 | `/api/pantry-items/{id}/consume/`     | Register consumption       | Member+              |
+| POST                 | `/api/pantry-items/{id}/waste/`       | Register waste             | Member+              |
 
-**Query parameters:** `household_id`, `status`, `category_id`, `search`, `expiring_soon=true`, `expired=true`, `ordering`
+**Query parameters:** `household_id`, `status`, `category_id`, `search`, `expiring_soon`, `expired`, `ordering`.
 
-### Recipes
+Example: `/api/pantry-items/?household_id=1&status=available&search=milk&expiring_soon=true`
 
-| Method | Endpoint | Description | Min role |
-|---|---|---|---|
-| GET | `/api/recipes/` | List (filterable, paginated) | Viewer |
-| POST | `/api/recipes/` | Create recipe | Any authenticated |
-| GET | `/api/recipes/{id}/` | Detail | Viewer |
-| PATCH / DELETE | `/api/recipes/{id}/` | Edit / delete | Creator or Admin |
-| GET | `/api/recipes/suggested/?household_id=` | Pantry-matched suggestions | Viewer |
+### Recipes, categories, logs
 
-**Query parameters:** `household_id` (enables `can_make`, `missing_ingredients_count`, `available_ingredient_names`), `search`
+| Method               | Endpoint                  | Description                          | Auth |
+|----------------------|---------------------------|--------------------------------------|------|
+| GET / POST           | `/api/recipes/`           | List / create recipes                | Yes  |
+| GET / PATCH / DELETE | `/api/recipes/{id}/`      | Detail / edit / delete               | Yes  |
+| GET                  | `/api/recipes/suggested/` | Recipes matched against the pantry   | Yes  |
+| GET                  | `/api/categories/`        | List food categories                 | Yes  |
+| GET                  | `/api/logs/`              | Activity log for a household         | Yes  |
 
-### Other
-
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/api/categories/` | List categories | ✅ |
-| GET | `/api/logs/?household_id=` | Activity log | ✅ |
+`/api/recipes/?household_id=1&search=pasta` returns recipes annotated with `can_make`, `missing_ingredients_count` and `available_ingredient_names` for that household.
 
 ---
 
 ## Authentication
 
-The API uses **Token Authentication** (DRF).
+The API uses **DRF Token Authentication**.
 
-1. Register or login : receive `{ token, user }`
-2. All subsequent requests include: `Authorization: Token <token>`
-3. The Angular `AuthInterceptor` attaches the token automatically to every request
+1. `POST /api/auth/register/` or `POST /api/auth/login/` → response contains `{ "token": "...", "user": {...} }`.
+2. All subsequent requests include `Authorization: Token <token>`.
+3. On the frontend, `AuthService` stores the token in `localStorage`. `AuthInterceptor` attaches it to every outgoing request and clears the session + redirects to `/login` if a 401 ever comes back.
 
 ---
 
-## Key Design Decisions
+## Role Permissions
 
-- **Recipes are global** - any user can create; only the creator or a Household Admin can edit/delete. Preloaded recipes (`is_preloaded=True`, `created_by=None`) are read-only to everyone.
-- **`can_make` / missing count only when pantry has items** - badges are suppressed (`null`) when the household pantry is empty to avoid misleading "Missing N" labels for new users.
-- **Pantry status** - only `available`, `consumed`, `wasted`. The `low` status was removed (migration 0002 converts existing data).
-- **Recipe pagination** - `RecipePagination(page_size=1000)` to serve all 500 preloaded recipes in one request.
-- **Partial recipe search** - implemented via manual `Q` objects (name, description, ingredient subquery) instead of DRF `SearchFilter` to avoid JOIN-duplication issues in SQLite.
-- **Pantry map caching** - `_get_pantry_map` caches per-request in the serializer context to avoid N+1 queries when rendering a list of recipes.
+| Action                        | Viewer | Member | Inv. Manager | Admin |
+|-------------------------------|:------:|:------:|:------------:|:-----:|
+| View pantry items             |   ✅   |   ✅   |      ✅      |   ✅  |
+| Add / edit / delete items     |   ❌   |   ❌   |      ✅      |   ✅  |
+| Consume / waste items         |   ❌   |   ✅   |      ✅      |   ✅  |
+| Edit household                |   ❌   |   ❌   |      ❌      |   ✅  |
+| Manage household members      |   ❌   |   ❌   |      ❌      |   ✅  |
+| Delete household              |   ❌   |   ❌   |      ❌      |   ✅  |
+
+`Member` can register what they consumed or wasted (so a younger family member can log their snacks) but cannot directly change the inventory - only `Inventory Manager` and `Admin` can add, edit, or delete items.
 
 ---
 
 ## Deployment
 
+The two layers can be deployed independently - a real n-tier setup as suggested in the assignment goals.
+
 ### Backend - PythonAnywhere
 
-1. Upload `backend/` to PythonAnywhere
-2. Create a virtual environment and install `requirements.txt`
-3. Set up a WSGI app pointing to `pantry_api.wsgi`
-4. In `settings.py`:
-   - Update `ALLOWED_HOSTS` with your PythonAnywhere domain
-   - Set `DEBUG = False`
-   - Set a secure `SECRET_KEY`
-   - Set `CORS_ALLOW_ALL_ORIGINS = False` and add your frontend URL to `CORS_ALLOWED_ORIGINS`
+1. Upload the `backend/` folder to PythonAnywhere.
+2. Create a virtual environment and run `pip install -r requirements.txt`.
+3. Point the Web app's WSGI configuration to `pantry_api.wsgi`.
+4. In `settings.py`, set `DEBUG = False`, update `ALLOWED_HOSTS` with your PythonAnywhere domain, and load `SECRET_KEY` from an environment variable.
+5. Restrict CORS: set `CORS_ALLOW_ALL_ORIGINS = False` and add the frontend origin to `CORS_ALLOWED_ORIGINS`.
 
-### Frontend - Netlify / Vercel / Heroku
+### Frontend - Heroku / Netlify / Vercel
 
-1. Update `src/environments/environment.prod.ts` with your PythonAnywhere API URL
+1. Update `src/environments/environment.prod.ts` with the PythonAnywhere API URL (replace the `YOUR_USERNAME` placeholder).
 2. Build for production:
    ```bash
    ng build --configuration production
    ```
-3. Deploy `dist/pantry-helper/` to your chosen host
+3. Deploy the contents of `dist/pantry-helper/` to the chosen static host.
+
+Angular automatically swaps `environment.ts` for `environment.prod.ts` in production builds.

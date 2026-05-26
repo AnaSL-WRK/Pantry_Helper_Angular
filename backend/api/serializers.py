@@ -171,7 +171,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         if not household_id:
             return None
         pantry_map = self._get_pantry_map(household_id)
-        if not pantry_map:  # no pantry items yet — don't evaluate
+        if not pantry_map:  # no pantry items yet - don't evaluate
             return None
         ingredients = list(obj.ingredients.all())
         if not ingredients:
@@ -183,7 +183,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         if not household_id:
             return None
         pantry_map = self._get_pantry_map(household_id)
-        if not pantry_map:  # no pantry items yet — don't evaluate
+        if not pantry_map:  # no pantry items yet - don't evaluate
             return None
         return sum(1 for ing in obj.ingredients.all() if ing.name.lower() not in pantry_map)
 

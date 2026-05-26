@@ -3,11 +3,21 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-pantry-helper-tp2-change-in-production-xyz123'
 
-DEBUG = True
 
-ALLOWED_HOSTS = ['*', 'localhost', '127.0.0.1', '.pythonanywhere.com']
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-pantry-helper-tp2-dev-only-change-in-production'
+)
+
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.pythonanywhere.com']
+_extra_hosts = os.environ.get('ALLOWED_HOSTS', '').strip()
+if _extra_hosts:
+    ALLOWED_HOSTS += [h.strip() for h in _extra_hosts.split(',') if h.strip()]
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -53,6 +63,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'pantry_api.wsgi.application'
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -69,12 +80,13 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-#Django REST Framework
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -88,14 +100,26 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
 }
 
-#CORS
+
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:4200",
-    "http://127.0.0.1:4200",
+    'http://localhost:4200',
+    'http://127.0.0.1:4200',
 ]
+_extra_origins = os.environ.get('CORS_ALLOWED_ORIGINS', '').strip()
+if _extra_origins:
+    CORS_ALLOWED_ORIGINS += [o.strip() for o in _extra_origins.split(',') if o.strip()]
 
 CORS_ALLOW_CREDENTIALS = True
 
-#for development- allow all
 CORS_ALLOW_ALL_ORIGINS = DEBUG
+
+
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
