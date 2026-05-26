@@ -1,6 +1,6 @@
-# Pantry Helper - TP2
+# Pantry Helper — TP2
 
-> **Tecnologias e Programação Web - Trabalho Prático 2**
+> **Tecnologias e Programação Web — Trabalho Prático 2**
 > Conversão do Pantry Helper (TP1) para arquitetura desacoplada com **Angular 17 + Django REST Framework**.
 
 ---
@@ -9,25 +9,36 @@
 
 Pantry Helper is a household pantry-management web application that helps families track what they have, what's about to expire, and what they can cook with it. This TP2 version replaces the Django template frontend used in TP1 with a clean two-tier setup:
 
-- **Backend:** Django REST Framework (DRF) - REST API
-- **Frontend:** Angular 17 - Single Page Application (SPA)
+- **Backend:** Django REST Framework (DRF) — REST API
+- **Frontend:** Angular 17 — Single Page Application (SPA)
 
-The two layers are fully decoupled, communicate over HTTP/JSON, and can be deployed independently.
+The two layers are fully decoupled, communicate over HTTP/JSON, and are deployed independently.
+
+## Live demo
+
+| Layer    | URL                                            |
+|----------|------------------------------------------------|
+| Frontend | <https://pantry-helper.netlify.app>            |
+| API root | <https://anawkua.pythonanywhere.com/api/>      |
+| Admin    | <https://anawkua.pythonanywhere.com/admin/>    |
+
+Log in with any of the demo accounts further down in this README (e.g. `demo_admin` / `demo1234`).
+
 
 ---
 
 ## Features
 
-- **Authentication** - Register, login, logout with DRF Token Authentication; a public landing page is shown to anonymous visitors
-- **Households** - Create and manage households, search for and invite members, assign roles
-- **Role-based access** - `Viewer` / `Member` / `Inventory Manager` / `Household Admin`
-- **Pantry Management** - Add, edit, consume, waste, and delete pantry items (partial consume/waste supported)
-- **Expiry Tracking** - Visual alerts for items expiring soon or already expired
-- **Category Filtering & Search** - Filter by category, status, expiring soon, expired, plus full-text search
-- **Recipe Management** - Create, browse, and view recipes with ingredients; ~500 preloaded recipes
-- **Recipe Suggestions** - Recipes scored against the available pantry, ranked by missing-ingredient count
-- **Activity Log** - Per-household history of add / update / consume / waste / delete actions
-- **Dashboard** - Stats overview + expiring items + expired items + suggested recipes at a glance
+- **Authentication** — Register, login, logout with DRF Token Authentication; a public landing page is shown to anonymous visitors
+- **Households** — Create and manage households, search for and invite members, assign roles
+- **Role-based access** — `Viewer` / `Member` / `Inventory Manager` / `Household Admin`
+- **Pantry Management** — Add, edit, consume, waste, and delete pantry items (partial consume/waste supported)
+- **Expiry Tracking** — Visual alerts for items expiring soon or already expired
+- **Category Filtering & Search** — Filter by category, status, expiring soon, expired, plus full-text search
+- **Recipe Management** — Create, browse, and view recipes with ingredients; ~500 preloaded recipes
+- **Recipe Suggestions** — Recipes scored against the available pantry, ranked by missing-ingredient count
+- **Activity Log** — Per-household history of add / update / consume / waste / delete actions
+- **Dashboard** — Stats overview + expiring items + expired items + suggested recipes at a glance
 
 ---
 
@@ -86,13 +97,13 @@ Pantry_Helper_Angular/
 
 ## Tech Stack
 
-**Backend** - Python 3.10+, Django 4.2, Django REST Framework 3.14, django-cors-headers, SQLite (dev), `rest_framework.authtoken` for Token Authentication.
+**Backend** — Python 3.10+, Django 4.2, Django REST Framework 3.14, django-cors-headers, SQLite (dev), `rest_framework.authtoken` for Token Authentication.
 
-**Frontend** - Angular 17, TypeScript 5.2, RxJS, Angular HttpClient (with a custom `AuthInterceptor`), Reactive Forms, Angular Router with Route Guards.
+**Frontend** — Angular 17, TypeScript 5.2, RxJS, Angular HttpClient (with a custom `AuthInterceptor`), Reactive Forms, Angular Router with Route Guards.
 
 ---
 
-## Setup - Backend
+## Setup — Backend
 
 ### Requirements
 - Python 3.10+
@@ -145,7 +156,7 @@ python manage.py runserver
 
 ---
 
-## Setup - Frontend
+## Setup — Frontend
 
 ### Requirements
 - Node.js 18+
@@ -168,7 +179,7 @@ The app is served at <http://localhost:4200>. **The backend must be running** at
 
 ## REST API Endpoints
 
-All endpoints require Token Authentication except `register` and `login`. Pass the token as `Authorization: Token <token>` on every authenticated request - the Angular `AuthInterceptor` does this automatically.
+All endpoints require Token Authentication except `register` and `login`. Pass the token as `Authorization: Token <token>` on every authenticated request — the Angular `AuthInterceptor` does this automatically.
 
 ### Authentication
 
@@ -238,29 +249,31 @@ The API uses **DRF Token Authentication**.
 | Manage household members      |   ❌   |   ❌   |      ❌      |   ✅  |
 | Delete household              |   ❌   |   ❌   |      ❌      |   ✅  |
 
-`Member` can register what they consumed or wasted (so a younger family member can log their snacks) but cannot directly change the inventory - only `Inventory Manager` and `Admin` can add, edit, or delete items.
+`Member` can register what they consumed or wasted (so a younger family member can log their snacks) but cannot directly change the inventory — only `Inventory Manager` and `Admin` can add, edit, or delete items.
 
 ---
 
 ## Deployment
 
-The two layers can be deployed independently - a real n-tier setup as suggested in the assignment goals.
+The two layers are deployed independently — a real n-tier setup as suggested in the assignment goals.
 
-### Backend - PythonAnywhere
+| Layer    | Host           | Live URL                                       | Plan |
+|----------|----------------|------------------------------------------------|------|
+| Backend  | PythonAnywhere | <https://anawkua.pythonanywhere.com/api/>      | Free |
+| Frontend | Netlify        | <https://pantry-helper.netlify.app>            | Free |
 
-1. Upload the `backend/` folder to PythonAnywhere.
-2. Create a virtual environment and run `pip install -r requirements.txt`.
-3. Point the Web app's WSGI configuration to `pantry_api.wsgi`.
-4. In `settings.py`, set `DEBUG = False`, update `ALLOWED_HOSTS` with your PythonAnywhere domain, and load `SECRET_KEY` from an environment variable.
-5. Restrict CORS: set `CORS_ALLOW_ALL_ORIGINS = False` and add the frontend origin to `CORS_ALLOWED_ORIGINS`.
 
-### Frontend - Heroku / Netlify / Vercel
+### How it's wired
 
-1. Update `src/environments/environment.prod.ts` with the PythonAnywhere API URL (replace the `YOUR_USERNAME` placeholder).
-2. Build for production:
-   ```bash
-   ng build --configuration production
-   ```
-3. Deploy the contents of `dist/pantry-helper/` to the chosen static host.
+- **Backend (PythonAnywhere)** — Django + DRF served via WSGI on the
+  free "Beginner" plan. Environment variables (`SECRET_KEY`, `DEBUG=False`,
+  `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`) are set in the WSGI file. SQLite
+  is used as the database; static files for the admin panel are served from
+  `staticfiles/` via the Web tab's static-files mapping. CORS only allows
+  the Netlify origin.
+- **Frontend (Netlify)** — Static build of the Angular app, served from
+  Netlify's global CDN. The build is auto-triggered on every push to
+  `main`. `frontend/netlify.toml` configures the build command and the SPA
+  fallback (so deep links like `/pantry` survive a page refresh). The
+  production API URL is set in `src/environments/environment.prod.ts`.
 
-Angular automatically swaps `environment.ts` for `environment.prod.ts` in production builds.
